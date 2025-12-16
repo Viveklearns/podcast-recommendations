@@ -1,0 +1,26 @@
+# Web Framework (Updated for Python 3.13 compatibility)
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+pydantic>=2.10.0
+pydantic-settings>=2.6.0
+
+# Database (SQLite - no extra dependencies needed!)
+sqlalchemy>=2.0.36
+alembic>=1.14.0
+
+# YouTube & Transcript
+youtube-transcript-api>=0.6.2
+google-api-python-client>=2.154.0
+feedparser>=6.0.11  # For YouTube RSS feeds
+
+# Claude API
+anthropic>=0.42.0
+
+# Data Enrichment APIs
+requests>=2.32.0
+
+# Utilities
+python-dotenv>=1.0.1
+python-multipart>=0.0.16
+fuzzywuzzy>=0.18.0
+python-Levenshtein>=0.25.0  # Optional but makes fuzzywuzzy faster
