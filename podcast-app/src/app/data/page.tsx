@@ -30,7 +30,7 @@ export default function DataPage() {
   const [episodes, setEpisodes] = useState<any[]>([]);
   const [podcasts, setPodcasts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState('all');
+  const [filterType, setFilterType] = useState('book');
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {

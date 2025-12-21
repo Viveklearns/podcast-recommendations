@@ -14,7 +14,12 @@ class Settings(BaseSettings):
 
     # Application
     DEBUG: bool = True
-    CORS_ORIGINS: List[str] = ["http://localhost:3000"]
+    CORS_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "https://podbooks.ai",
+        "https://www.podbooks.ai",
+        "https://podbooks-ai.vercel.app"
+    ]
 
     # Lenny's Podcast Configuration
     LENNY_YOUTUBE_CHANNEL_ID: str = "@LennysPodcast"

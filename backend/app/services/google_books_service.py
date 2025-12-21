@@ -192,14 +192,16 @@ class GoogleBooksService:
             'canonical_volume_link': volume_info.get('canonicalVolumeLink'),
         }
 
-        # Generate Amazon URL if we have ISBN-10
-        if isbn_10:
-            metadata['amazon_url'] = f"https://www.amazon.com/dp/{isbn_10}"
-        elif isbn_13:
-            # Try to convert ISBN-13 to ISBN-10
-            isbn_10_converted = self._isbn13_to_isbn10(isbn_13)
-            if isbn_10_converted:
-                metadata['amazon_url'] = f"https://www.amazon.com/dp/{isbn_10_converted}"
+        # Generate Amazon URL - use title + author for better reliability
+        # Format: https://www.amazon.com/s?k=Title+Author
+        from urllib.parse import quote_plus
+        title = volume_info.get('title', '')
+        authors = volume_info.get('authors', [])
+        if title:
+            search_query = title
+            if authors:
+                search_query += ' ' + authors[0]
+            metadata['amazon_url'] = f"https://www.amazon.com/s?k={quote_plus(search_query)}"
 
         return metadata
 
