@@ -59,7 +59,7 @@ export default function RecommendationCard({ recommendation }: RecommendationCar
     } else if (recommendation.type === "movie" || recommendation.type === "tv_show") {
       return recommendation.creatorDirector || `${recommendation.releaseYear}`;
     }
-    return recommendation.category;
+    return undefined;
   };
 
   return (
