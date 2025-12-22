@@ -15,9 +15,8 @@ export default function RecommendationCard({ recommendation }: RecommendationCar
       return recommendation.coverImageUrl;
     } else if (recommendation.type === "movie" || recommendation.type === "tv_show") {
       return recommendation.posterUrl;
-    } else {
-      return recommendation.imageUrl;
     }
+    return undefined;
   };
 
   const getTypeLabel = () => {
