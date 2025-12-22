@@ -59,15 +59,15 @@ export default function Home() {
           {/* Stats */}
           <div className="mt-12 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
             <div>
-              <div className="text-4xl font-bold">{stats?.totalRecommendations || 0}</div>
+              <div className="text-4xl font-bold">{stats?.total_recommendations || 0}</div>
               <div className="text-teal-200 text-sm">Recommendations</div>
             </div>
             <div>
-              <div className="text-4xl font-bold">{stats?.totalPodcasts || 0}</div>
+              <div className="text-4xl font-bold">{stats?.total_podcasts || 0}</div>
               <div className="text-teal-200 text-sm">Podcasts</div>
             </div>
             <div>
-              <div className="text-4xl font-bold">{stats?.totalEpisodes || 0}</div>
+              <div className="text-4xl font-bold">{stats?.total_episodes || 0}</div>
               <div className="text-teal-200 text-sm">Episodes</div>
             </div>
           </div>
