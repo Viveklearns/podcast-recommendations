@@ -107,10 +107,10 @@ export interface OtherRecommendation {
 
 export type Recommendation = BookRecommendation | MovieTVRecommendation | OtherRecommendation;
 
-export interface RecommendationWithDetails extends Recommendation {
+export type RecommendationWithDetails = Recommendation & {
   episode: Episode;
   podcast: Podcast;
-}
+};
 
 // Filter types
 export interface FilterOptions {
