@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { API_URL } from '@/config/api';
+// Production deployment with PostgreSQL backend
 
 interface Book {
   id: string;
