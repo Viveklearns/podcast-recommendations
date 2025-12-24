@@ -1,203 +1,246 @@
 'use client';
 
-import Link from "next/link";
-import RecommendationCard from "@/components/RecommendationCard";
-import PodcastBadge from "@/components/PodcastBadge";
-import { useApi } from "@/hooks/useApi";
-import { getRecommendations, getPodcasts, getStats } from "@/lib/api";
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { API_URL } from '@/config/api';
+// Production deployment with PostgreSQL backend
 
-export default function Home() {
-  // Fetch data from backend API (fetch more for better variety)
-  const { data: allRecommendations, loading: recsLoading } = useApi(() => getRecommendations({ limit: 100 }));
-  const { data: podcasts, loading: podcastsLoading } = useApi(getPodcasts);
-  const { data: stats } = useApi(getStats);
+interface Book {
+  id: string;
+  title: string;
+  author?: string;
+  coverImageUrl?: string;
+  primaryTheme?: string;
+  subthemes?: string[];
+  description?: string;
+  fictionType?: string;
+  businessCategory?: string;
+  recommendedBy?: string;
+  amazonUrl?: string;
+}
 
-  // Show loading state
-  if (recsLoading || podcastsLoading) {
+interface ThemeGroup {
+  theme: string;
+  books: Book[];
+}
+
+export default function BooksPage() {
+  const [themeGroups, setThemeGroups] = useState<ThemeGroup[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    async function fetchBooks() {
+      try {
+        const response = await fetch(`${API_URL}/api/recommendations?type=book&limit=1000`);
+        const data = await response.json();
+
+        console.log('Fetched data:', data);
+
+        // Group books by primaryTheme
+        const grouped: Record<string, Book[]> = {};
+
+        // Handle both array and object with recommendations key
+        const books = Array.isArray(data) ? data : (data.recommendations || []);
+
+        books.forEach((book: any) => {
+          const theme = book.primaryTheme || 'Other';
+          if (!grouped[theme]) {
+            grouped[theme] = [];
+          }
+          grouped[theme].push({
+            id: book.id,
+            title: book.title,
+            author: book.author,
+            coverImageUrl: book.coverImageUrl,
+            primaryTheme: book.primaryTheme,
+            subthemes: book.subthemes,
+            description: book.description,
+            fictionType: book.fictionType,
+            businessCategory: book.businessCategory,
+            recommendedBy: book.recommendedBy,
+            amazonUrl: book.amazonUrl,
+          });
+        });
+
+        console.log('Grouped themes:', Object.keys(grouped));
+
+        // Convert to array and sort by number of books
+        const themeGroupsArray = Object.entries(grouped)
+          .map(([theme, books]) => ({ theme, books }))
+          .sort((a, b) => b.books.length - a.books.length);
+
+        console.log('Theme groups:', themeGroupsArray.length);
+        setThemeGroups(themeGroupsArray);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching books:', error);
+        setLoading(false);
+      }
+    }
+
+    fetchBooks();
+  }, []);
+
+  // Filter by search term
+  const filteredGroups = themeGroups.map(group => ({
+    ...group,
+    books: group.books.filter(book =>
+      searchTerm === '' ||
+      book.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.author?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      book.recommendedBy?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  })).filter(group => group.books.length > 0);
+
+  if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-2xl font-semibold text-gray-700">Loading recommendations...</div>
-        </div>
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="text-2xl">Loading...</div>
       </div>
     );
   }
 
-  const recommendations = allRecommendations || [];
-  const podcastList = podcasts || [];
+  return (
+    <div className="min-h-screen bg-black text-white">
+      {/* Hero Section */}
+      <div className="relative h-[60vh] w-full overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" />
+        {themeGroups[0]?.books[0]?.coverImageUrl && (
+          <div className="absolute inset-0 opacity-30">
+            <Image
+              src={themeGroups[0].books[0].coverImageUrl}
+              alt="Featured book"
+              fill
+              className="object-cover blur-sm"
+              unoptimized
+            />
+          </div>
+        )}
+        <div className="relative z-20 h-full flex flex-col justify-end p-12 max-w-7xl mx-auto">
+          <h1 className="text-6xl font-bold mb-4">Book Recommendations by Theme</h1>
+          <p className="text-xl text-gray-300 max-w-2xl mb-8">
+            {themeGroups.length} themes • {themeGroups.reduce((sum, g) => sum + g.books.length, 0)} books
+          </p>
 
-  const featuredRecommendations = recommendations.slice(0, 4);
-  const bookRecommendations = recommendations.filter(r => r.type === 'book').slice(0, 3);
-  const movieRecommendations = recommendations.filter(r => r.type === 'movie' || r.type === 'tv_show').slice(0, 3);
+          {/* Search */}
+          <div className="max-w-2xl">
+            <input
+              type="text"
+              placeholder="Search by title, author, or recommender..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-6 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Theme Sections */}
+      <div className="px-12 pb-20 -mt-20 relative z-30 space-y-16">
+        {filteredGroups.map((group) => (
+          <ThemeSection key={group.theme} theme={group.theme} books={group.books} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ThemeSection({ theme, books }: { theme: string; books: Book[] }) {
+  const [showAll, setShowAll] = useState(false);
+  const displayBooks = showAll ? books : books.slice(0, 12);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-teal-600 to-teal-900 text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
-            Discover What Experts Recommend
-          </h1>
-          <p className="text-xl md:text-2xl mb-8 text-teal-100 max-w-3xl mx-auto">
-            Books, movies, apps, and more—curated from the top podcasts in the US
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/browse"
-              className="bg-white text-teal-700 px-8 py-4 rounded-lg font-semibold hover:bg-teal-50 transition-colors text-lg"
-            >
-              Browse All Recommendations
-            </Link>
-            <Link
-              href="/search"
-              className="bg-teal-700 text-white px-8 py-4 rounded-lg font-semibold hover:bg-teal-800 transition-colors text-lg border-2 border-white"
-            >
-              Search
-            </Link>
-          </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold">{theme}</h2>
+        <span className="text-gray-400 text-lg">{books.length} books</span>
+      </div>
 
-          {/* Stats */}
-          <div className="mt-12 grid grid-cols-3 gap-8 max-w-2xl mx-auto">
-            <div>
-              <div className="text-4xl font-bold">{stats?.total_recommendations || 0}</div>
-              <div className="text-teal-200 text-sm">Recommendations</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold">{stats?.total_podcasts || 0}</div>
-              <div className="text-teal-200 text-sm">Podcasts</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold">{stats?.total_episodes || 0}</div>
-              <div className="text-teal-200 text-sm">Episodes</div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+        {displayBooks.map((book) => (
+          <BookCard key={book.id} book={book} />
+        ))}
+      </div>
 
-      {/* Featured Recommendations */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Featured Recommendations</h2>
-            <Link href="/browse" className="text-teal-600 hover:text-teal-700 font-semibold">
-              View All →
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredRecommendations.map((rec) => (
-              <RecommendationCard key={rec.id} recommendation={rec} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Browse by Category */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Browse by Category</h2>
-
-          {/* Books */}
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-semibold text-gray-800">📚 Books</h3>
-              <Link href="/browse?type=book" className="text-teal-600 hover:text-teal-700 font-semibold">
-                View All Books →
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {bookRecommendations.map((rec) => (
-                <RecommendationCard key={rec.id} recommendation={rec} />
-              ))}
-            </div>
-          </div>
-
-          {/* Movies & TV */}
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-2xl font-semibold text-gray-800">🎬 Movies & TV Shows</h3>
-              <Link href="/browse?type=movie" className="text-teal-600 hover:text-teal-700 font-semibold">
-                View All →
-              </Link>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {movieRecommendations.map((rec) => (
-                <RecommendationCard key={rec.id} recommendation={rec} />
-              ))}
-            </div>
-          </div>
-
-          {/* Category Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-12">
-            <Link
-              href="/browse?type=book"
-              className="bg-teal-50 border-2 border-teal-200 rounded-lg p-6 text-center hover:border-teal-400 hover:shadow-lg transition-all"
-            >
-              <div className="text-4xl mb-2">📚</div>
-              <div className="font-semibold text-gray-900">Books</div>
-              <div className="text-sm text-gray-600">{recommendations.filter(r => r.type === 'book').length} items</div>
-            </Link>
-            <Link
-              href="/browse?type=movie"
-              className="bg-purple-50 border-2 border-purple-200 rounded-lg p-6 text-center hover:border-purple-400 hover:shadow-lg transition-all"
-            >
-              <div className="text-4xl mb-2">🎬</div>
-              <div className="font-semibold text-gray-900">Movies</div>
-              <div className="text-sm text-gray-600">{recommendations.filter(r => r.type === 'movie').length} items</div>
-            </Link>
-            <Link
-              href="/browse?type=tv_show"
-              className="bg-pink-50 border-2 border-pink-200 rounded-lg p-6 text-center hover:border-pink-400 hover:shadow-lg transition-all"
-            >
-              <div className="text-4xl mb-2">📺</div>
-              <div className="font-semibold text-gray-900">TV Shows</div>
-              <div className="text-sm text-gray-600">{recommendations.filter(r => r.type === 'tv_show').length} items</div>
-            </Link>
-            <Link
-              href="/browse?type=app"
-              className="bg-green-50 border-2 border-green-200 rounded-lg p-6 text-center hover:border-green-400 hover:shadow-lg transition-all"
-            >
-              <div className="text-4xl mb-2">📱</div>
-              <div className="font-semibold text-gray-900">Apps</div>
-              <div className="text-sm text-gray-600">{recommendations.filter(r => r.type === 'app').length} items</div>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Browse by Podcast */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl font-bold text-gray-900">Browse by Podcast</h2>
-            <Link href="/podcasts" className="text-teal-600 hover:text-teal-700 font-semibold">
-              View All Podcasts →
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {podcastList.slice(0, 6).map((podcast) => (
-              <PodcastBadge key={podcast.id} podcast={podcast} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-teal-600 to-teal-700">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Never Miss a Great Recommendation
-          </h2>
-          <p className="text-xl text-teal-100 mb-8">
-            We automatically extract and organize recommendations from every episode
-          </p>
-          <Link
-            href="/browse"
-            className="bg-white text-teal-700 px-8 py-4 rounded-lg font-semibold hover:bg-teal-50 transition-colors inline-block text-lg"
+      {books.length > 12 && (
+        <div className="flex justify-center">
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
           >
-            Start Exploring
-          </Link>
+            {showAll ? 'Show Less' : `Show All ${books.length} Books`}
+          </button>
         </div>
-      </section>
+      )}
+    </div>
+  );
+}
+
+function BookCard({ book }: { book: Book }) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div
+      className="group cursor-pointer transition-transform duration-300 hover:scale-105"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-gray-800 shadow-lg">
+        {book.coverImageUrl ? (
+          <Image
+            src={book.coverImageUrl}
+            alt={book.title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 16vw"
+            unoptimized
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center p-4 text-center">
+            <span className="text-sm font-medium line-clamp-4">{book.title}</span>
+          </div>
+        )}
+
+        {/* Hover Overlay */}
+        {isHovered && (
+          <div className="absolute inset-0 bg-black/95 p-4 flex flex-col justify-between text-xs overflow-hidden">
+            <div>
+              <h3 className="font-bold mb-2 line-clamp-3 text-sm">{book.title}</h3>
+              {book.author && (
+                <p className="text-gray-400 mb-2 line-clamp-2">{book.author}</p>
+              )}
+              {book.recommendedBy && (
+                <p className="text-teal-400 text-xs mb-2">
+                  Recommended by {book.recommendedBy}
+                </p>
+              )}
+            </div>
+            <div>
+              {book.subthemes && book.subthemes.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {book.subthemes.slice(0, 2).map((subtheme, idx) => (
+                    <span key={idx} className="bg-white/20 px-2 py-1 rounded text-xs">
+                      {subtheme}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {book.amazonUrl && (
+                <a
+                  href={book.amazonUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-center bg-orange-600 hover:bg-orange-700 px-3 py-2 rounded text-sm font-semibold"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  View on Amazon
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
