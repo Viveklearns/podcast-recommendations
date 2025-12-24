@@ -6,6 +6,7 @@ from app.models import Podcast, Episode, Recommendation
 from app.models.processing_metrics import ProcessingMetrics
 from app.config import settings
 from app.services.book_enrichment_service import BookEnrichmentService
+from app.routers import books
 from typing import List, Optional
 import logging
 
@@ -28,6 +29,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(books.router)
 
 
 # Create tables on startup

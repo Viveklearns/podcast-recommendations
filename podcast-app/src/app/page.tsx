@@ -15,7 +15,8 @@ interface Book {
   description?: string;
   fictionType?: string;
   businessCategory?: string;
-  recommendedBy?: string;
+  recommendedBy?: string[];  // Array of recommender names
+  recommendationCount?: number;  // Number of times recommended
   amazonUrl?: string;
 }
 
@@ -32,7 +33,7 @@ export default function BooksPage() {
   useEffect(() => {
     async function fetchBooks() {
       try {
-        const response = await fetch(`${API_URL}/api/recommendations?type=book&limit=1000`);
+        const response = await fetch(`${API_URL}/api/books/aggregated?sort=recommendation_count&order=desc&limit=1000`);
         const data = await response.json();
 
         console.log('Fetched data:', data);
@@ -58,7 +59,8 @@ export default function BooksPage() {
             description: book.description,
             fictionType: book.fictionType,
             businessCategory: book.businessCategory,
-            recommendedBy: book.recommendedBy,
+            recommendedBy: book.recommendedBy,  // Already an array
+            recommendationCount: book.recommendationCount,
             amazonUrl: book.amazonUrl,
           });
         });
@@ -89,7 +91,7 @@ export default function BooksPage() {
       searchTerm === '' ||
       book.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       book.author?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.recommendedBy?.toLowerCase().includes(searchTerm.toLowerCase())
+      book.recommendedBy?.some(name => name.toLowerCase().includes(searchTerm.toLowerCase()))
     )
   })).filter(group => group.books.length > 0);
 
@@ -210,10 +212,15 @@ function BookCard({ book }: { book: Book }) {
               {book.author && (
                 <p className="text-gray-400 mb-2 line-clamp-2">{book.author}</p>
               )}
-              {book.recommendedBy && (
-                <p className="text-teal-400 text-xs mb-2">
-                  Recommended by {book.recommendedBy}
-                </p>
+              {book.recommendedBy && book.recommendedBy.length > 0 && (
+                <div className="text-teal-400 text-xs mb-2">
+                  <p className="font-semibold">
+                    Recommended by {book.recommendationCount || book.recommendedBy.length} {book.recommendationCount === 1 ? 'person' : 'people'}:
+                  </p>
+                  <p className="mt-1 line-clamp-3">
+                    {book.recommendedBy.join(', ')}
+                  </p>
+                </div>
               )}
             </div>
             <div>
