@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { API_URL } from '@/config/api';
+import Navigation from '@/components/Navigation';
 // Production deployment with PostgreSQL backend
 
 interface Book {
@@ -119,27 +120,37 @@ export default function BooksPage() {
             />
           </div>
         )}
-        <div className="relative z-20 h-full flex flex-col justify-end p-12 max-w-7xl mx-auto">
-          <h1 className="text-6xl font-bold mb-4">Book Recommendations by Theme</h1>
-          <p className="text-xl text-gray-300 max-w-2xl mb-8">
-            {themeGroups.length} themes • {themeGroups.reduce((sum, g) => sum + g.books.length, 0)} books
-          </p>
+        <div className="relative z-20 h-full flex flex-col justify-between">
+          {/* Navigation at top */}
+          <div className="pt-8 px-8 relative">
+            <Navigation style="pills" />
+          </div>
 
-          {/* Search */}
-          <div className="max-w-2xl">
-            <input
-              type="text"
-              placeholder="Search by title, author, or recommender..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-6 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
-            />
+          {/* Tagline and search at bottom */}
+          <div className="max-w-4xl px-12 pb-16">
+            <p className="text-4xl font-bold text-gray-100 leading-tight mb-4">
+              Find your next great read from the books podcast guests can't stop talking about
+            </p>
+            <p className="text-lg text-gray-400 mb-6">
+              {themeGroups.reduce((sum, g) => sum + g.books.length, 0)} books from podcast guests • Browse by theme or guest
+            </p>
+
+            {/* Search */}
+            <div className="max-w-2xl">
+              <input
+                type="text"
+                placeholder="Search by title, author, or recommender..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-6 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Theme Sections */}
-      <div className="px-12 pb-20 -mt-20 relative z-30 space-y-16">
+      <div className="px-12 pb-20 -mt-10 relative z-30 space-y-16">
         {filteredGroups.map((group) => (
           <ThemeSection key={group.theme} theme={group.theme} books={group.books} />
         ))}
