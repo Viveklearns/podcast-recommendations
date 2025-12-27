@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { API_URL } from '@/config/api';
+import Navigation from '@/components/Navigation';
 
 interface Book {
   id: string;
@@ -69,25 +70,44 @@ export default function GuestRecommendationsPage() {
   return (
     <div className="min-h-screen bg-black text-white">
       {/* Hero Section */}
-      <div className="relative h-[50vh] w-full overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent z-10" />
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-900/30 to-blue-900/30" />
-
-        <div className="relative z-20 h-full flex flex-col justify-end p-12 max-w-7xl mx-auto">
-          <h1 className="text-6xl font-bold mb-4">Guest Recommendations</h1>
-          <p className="text-xl text-gray-300 max-w-2xl mb-8">
-            {episodes.length} episodes • Chronological timeline of book recommendations by podcast guests
-          </p>
-
-          {/* Search */}
-          <div className="max-w-2xl">
-            <input
-              type="text"
-              placeholder="Search by guest name, episode, or book title..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-6 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+      <div className="relative h-[60vh] w-full overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent z-10" />
+        {episodes[0]?.books[0]?.coverImageUrl && (
+          <div className="absolute inset-0 opacity-30">
+            <Image
+              src={episodes[0].books[0].coverImageUrl}
+              alt="Featured book"
+              fill
+              className="object-cover blur-sm"
+              unoptimized
             />
+          </div>
+        )}
+        <div className="relative z-20 h-full flex flex-col justify-between">
+          {/* Navigation at top */}
+          <div className="pt-8 px-8 relative">
+            <Navigation style="pills" />
+          </div>
+
+          {/* Tagline and search at bottom */}
+          <div className="max-w-4xl px-12 pb-16">
+            <p className="text-4xl font-bold text-gray-100 leading-tight mb-4">
+              Find your next great read from the books podcast guests can't stop talking about
+            </p>
+            <p className="text-lg text-gray-400 mb-6">
+              {episodes.length} episodes • Chronological timeline of book recommendations
+            </p>
+
+            {/* Search */}
+            <div className="max-w-2xl">
+              <input
+                type="text"
+                placeholder="Search by guest name, episode, or book title..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-6 py-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -122,7 +142,7 @@ function EpisodeCard({ episode }: { episode: Episode }) {
       <div className="flex items-start justify-between mb-6">
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-xl font-bold">
+            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center text-xl font-bold">
               {episode.guestName?.[0] || '?'}
             </div>
             <div>
